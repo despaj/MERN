@@ -1,0 +1,61 @@
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+require('dotenv').config();
+
+const Student = require('./models/Student');
+
+const app = express();
+app.use(express.json());
+app.use(cors());
+
+mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/studentDB')
+.then(() => console.log('MongoDB Connected'))
+.catch(err => console.log(err));
+
+
+app.post('/students', async (req, res) => {
+ try {
+   const { name, course, age } = req.body;
+   const newStudent = new Student({ name, course, age });
+   const savedStudent = await newStudent.save();
+   res.status(201).json(savedStudent);
+ } catch (err) {
+   res.status(500).json({ error: err.message });
+ }
+});
+
+app.get('/students', async (req, res) => {
+ try {
+   const students = await Student.find();
+   res.json(students);
+ } catch (err) {
+   res.status(500).json({ error: err.message });
+ }
+});
+
+app.put('/students/:id', async (req, res) => {
+ try {
+   const { name, course, age } = req.body;
+   const updatedStudent = await Student.findByIdAndUpdate(
+     req.params.id,
+     { name, course, age },
+     { new: true }
+   );
+   res.json(updatedStudent);
+ } catch (err) {
+   res.status(500).json({ error: err.message });
+ }
+});
+
+app.delete('/students/:id', async (req, res) => {
+ try {
+   await Student.findByIdAndDelete(req.params.id);
+   res.json({ message: 'Student deleted successfully' });
+ } catch (err) {
+   res.status(500).json({ error: err.message });
+ }
+});
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
